@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Neo4JPrototype.Model;
 using Neo4jClient;
 using Neo4jClient.Cypher;
 
@@ -19,11 +20,11 @@ namespace Neo4JPrototype
             // Init
             Connect();
 
-            ClearDatabase();
+       //     ClearDatabase();
 
             //CreateSampleData();
 
-            CreateSampleDataShunLan();
+        //    CreateSampleDataShunLan();
 
             ExecuteQueries();
 
@@ -39,10 +40,10 @@ namespace Neo4JPrototype
             var ShunLanNode = client.Cypher
                                .Start(new { n = Node.ByIndexLookup("node_auto_index", "Name", "ShunLan") });
 
-            var ShunLanNodeResult = ShunLanNode.Return<Person>("n");
+            var ShunLanNodeResult = ShunLanNode.Return<Node<Person>>("n");
 
 
-            Console.WriteLine("Returning a single node : {0}", ShunLanNodeResult.Results.First().Name);
+            Console.WriteLine("Returning a single node : {0}", ShunLanNodeResult.Results.First().Data.Name);
 
             //Return the number of nodes
             var allNodes = client.Cypher
@@ -51,6 +52,14 @@ namespace Neo4JPrototype
                                .Results;
 
             Console.WriteLine("There are {0} nodes", allNodes.Count());
+
+            //Number of things shun-lan is related to
+            var allShunThings = ShunLanNode
+            .Match("n-->property")
+        .Return<Object>("property")
+        .Results.ToList();
+            Console.WriteLine("Shun-Lan is related to {0} things ", allShunThings.Count());
+
 
             //Return what shun lan Owns
             var allShunLan = ShunLanNode
@@ -77,6 +86,37 @@ namespace Neo4JPrototype
                      .Return<Home>("property")
                      .Results.ToList();
             Console.WriteLine("Shun-Lan Owns {0} Home {1}", allShunLanHomes.Count(), allShunLanHomes[0].HomeAddress);
+
+            //Return Peop shun is related to
+            var allShunLanPeople = ShunLanNode
+                         .Match("n -- people")
+                         .Where("people.NodeType = \"PERSON\"")
+                     .Return<Person>("people")
+                     .Results.ToList();
+            Console.WriteLine("Shun-Lan knows {0}", allShunLanPeople.Count());
+            allShunLanPeople.ForEach(c => Console.WriteLine("      {0}", c.Name));
+     
+            //Get the MG 3 Vehicle
+            var mg3 = client.Cypher
+                               .Start(new { n = Node.ByIndexLookup("node_auto_index", "MakeModel", "MG 3") });
+
+            var MG3Result = mg3.Return<Node<Vehicle>>("n");
+            Console.WriteLine("Returning a single node : {0}", MG3Result.Results.First().Data.MakeModel);
+            
+            //Tell me how the MG and Shunlan are related
+            var q = client.Cypher
+                          .Start(new
+                              {
+                                  mg = MG3Result.Results.First().Reference,
+                                  shunlan = ShunLanNodeResult.Results.First().Reference
+                              })
+                          .Match("mg -[r]-> shunlan")
+                          .Return((mg, r, shunlan) => new
+                              {
+                                  MG = mg.As<Node<Vehicle>>(),
+                                  Conn = r.As<Relationship>(),
+                                  sh = shunlan.As<Node<Person>>()
+                              }).Results.ToList();
 
 
             // Should Joesph get marketing about home insurance?  No Wife already has it
@@ -206,7 +246,7 @@ namespace Neo4JPrototype
 
         private static void Connect()
         {
-            client = new GraphClient(new Uri("http://localhost:7474/db/data"));
+            client = new GraphClient(new Uri("http://localhost.:7474/db/data"));
             client.Connect();
         }
 
@@ -230,244 +270,6 @@ namespace Neo4JPrototype
         }
     }
 
-    #region NodeTypes
-
-    public class Person
-    {
-        public static readonly string NodeTypeKey = "PERSON";
-
-        public string Name { get; set; }
-        public string NodeType
-        {
-            get { return NodeTypeKey; }
-        }
-    }
-
-    public class Policy
-    {
-        public static readonly string NodeTypeKey = "POLICY";
-
-        public string PolicyNumber { get; set; }
-        public string NodeType
-        {
-            get { return NodeTypeKey; }
-        }
-    }
-
-    public class Property
-    {
-        public static readonly string NodeTypeKey = "PROPERTY";
-
-        public string NodeType
-        {
-            get { return NodeTypeKey; }
-        }
-
-        public virtual string Name()
-        {
-            return "No Name given";
-        }
-    }
-
-    public class Vehicle : Property
-    {
-        public static readonly string NodeTypeSubKey = "VEHICLE";
-        public string Id { get; set; }
-        public string MakeModel { get; set; }
-
-        public string NodeTypeSub
-        {
-            get { return NodeTypeSubKey; }
-        }
-        public override string Name()
-        {
-            return string.Format("Vehicle: {0}", MakeModel);
-        }
-    }
-
-    public class Home : Property
-    {
-        public static readonly string NodeTypeSubKey = "HOME";
-
-        public string Id { get; set; }
-        public string HomeAddress { get; set; }
-
-        public string NodeTypeSub
-        {
-            get { return NodeTypeSubKey; }
-        }
-
-        public override string Name()
-        {
-            return string.Format("Home: {0}", HomeAddress);
-        }
-    }
-
-    #endregion
-
-
-    #region Relationships
-
-
-
-    public class NamedInsuredRelationship : Relationship<NamedInsuredData>, IRelationshipAllowingSourceNode<Person>,
-                                            IRelationshipAllowingTargetNode<Person>
-    {
-        public static readonly string TypeKey = "NIN";
-
-        public NamedInsuredRelationship(NodeReference targetNode, NamedInsuredData data)
-            : base(targetNode, data)
-        {
-        }
-
-        public override string RelationshipTypeKey
-        {
-            get { return TypeKey; }
-        }
-    }
-
-    public class SecondaryInsuredRelationship : Relationship, IRelationshipAllowingSourceNode<Person>,
-                                          IRelationshipAllowingTargetNode<Person>
-    {
-        public static readonly string TypeKey = "SIN";
-
-        public SecondaryInsuredRelationship(NodeReference targetNode)
-            : base(targetNode)
-        {
-        }
-
-        public override string RelationshipTypeKey
-        {
-            get { return TypeKey; }
-        }
-    }
-
-    public class OperatorRelationship : Relationship, IRelationshipAllowingSourceNode<Person>,
-                                        IRelationshipAllowingTargetNode<Person>
-    {
-        public static readonly string TypeKey = "OPERATOR";
-
-        public OperatorRelationship(NodeReference targetNode)
-            : base(targetNode)
-        {
-        }
-
-        public override string RelationshipTypeKey
-        {
-            get { return TypeKey; }
-        }
-    }
-
-
-    public class OwnerRelationship : Relationship, IRelationshipAllowingSourceNode<Person>,
-                                    IRelationshipAllowingTargetNode<Vehicle>
-    {
-        public static readonly string TypeKey = "OWNER";
-
-        public OwnerRelationship(NodeReference targetNode)
-            : base(targetNode)
-        {
-        }
-
-        public override string RelationshipTypeKey
-        {
-            get { return TypeKey; }
-        }
-    }
-
-
-    public class PolicyDriverRelationship : Relationship, IRelationshipAllowingSourceNode<Person>,
-                                       IRelationshipAllowingTargetNode<Person>
-    {
-        public static readonly string TypeKey = "DRIVER";
-
-        public PolicyDriverRelationship(NodeReference targetNode)
-            : base(targetNode)
-        {
-        }
-
-        public override string RelationshipTypeKey
-        {
-            get { return TypeKey; }
-        }
-    }
-
-    public class IsSpouseRelationship : Relationship, IRelationshipAllowingSourceNode<Person>,
-                                   IRelationshipAllowingTargetNode<Person>
-    {
-        public static readonly string TypeKey = "ISSPOUSE";
-
-        public IsSpouseRelationship(NodeReference targetNode)
-            : base(targetNode)
-        {
-        }
-
-        public override string RelationshipTypeKey
-        {
-            get { return TypeKey; }
-        }
-    }
-
-    public class IsChildRelationship : Relationship, IRelationshipAllowingSourceNode<Person>,
-                                       IRelationshipAllowingTargetNode<Person>
-    {
-        public static readonly string TypeKey = "ISCHILD";
-
-        public IsChildRelationship(NodeReference targetNode)
-            : base(targetNode)
-        {
-        }
-
-        public override string RelationshipTypeKey
-        {
-            get { return TypeKey; }
-        }
-    }
-    public class InsuresRelationship : Relationship, IRelationshipAllowingSourceNode<Policy>,
-                                    IRelationshipAllowingTargetNode<Vehicle>
-    {
-        public static readonly string TypeKey = "INSURES";
-
-        public InsuresRelationship(NodeReference targetNode)
-            : base(targetNode)
-        {
-        }
-
-        public override string RelationshipTypeKey
-        {
-            get { return TypeKey; }
-        }
-    }
-
-    public class IsWifeRelationship : Relationship, IRelationshipAllowingSourceNode<Person>,
-                                    IRelationshipAllowingTargetNode<Person>
-    {
-        public static readonly string TypeKey = "ISWIFE";
-
-        public IsWifeRelationship(NodeReference targetNode)
-            : base(targetNode)
-        {
-        }
-
-        public override string RelationshipTypeKey
-        {
-            get { return TypeKey; }
-        }
-    }
-    public class NamedInsuredData
-    {
-        public string Reason { get; set; }
-
-        public NamedInsuredData()
-        {
-        }
-
-        public NamedInsuredData(string reason)
-        {
-            this.Reason = reason;
-        }
-    }
-
-    #endregion
+ 
 
 }

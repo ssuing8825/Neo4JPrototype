@@ -3,6 +3,10 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo4JPrototype", "Neo4JPrototype\Neo4JPrototype.csproj", "{D3811AD0-86D3-4A02-9BB3-FCEDA91B99B3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo4JPrototype.Test", "Neo4JPrototype.Test\Neo4JPrototype.Test.csproj", "{880BAAF2-2654-402D-92B9-A384711C096F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo4JPrototype.Model", "Neo4JPrototype.Model\Neo4JPrototype.Model.csproj", "{E9FD958B-A41E-4D0D-B499-DBCACDCC26F5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -13,6 +17,14 @@ Global
 		{D3811AD0-86D3-4A02-9BB3-FCEDA91B99B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D3811AD0-86D3-4A02-9BB3-FCEDA91B99B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D3811AD0-86D3-4A02-9BB3-FCEDA91B99B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{880BAAF2-2654-402D-92B9-A384711C096F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{880BAAF2-2654-402D-92B9-A384711C096F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{880BAAF2-2654-402D-92B9-A384711C096F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{880BAAF2-2654-402D-92B9-A384711C096F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9FD958B-A41E-4D0D-B499-DBCACDCC26F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9FD958B-A41E-4D0D-B499-DBCACDCC26F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9FD958B-A41E-4D0D-B499-DBCACDCC26F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9FD958B-A41E-4D0D-B499-DBCACDCC26F5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
